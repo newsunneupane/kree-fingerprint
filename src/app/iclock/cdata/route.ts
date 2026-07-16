@@ -3,12 +3,25 @@ import connectDB from '@/lib/db';
 import Attendance from '@/models/Attendance';
 
 // ZKTeco hardware handshake
-export async function GET(req: Request) {
-    return new NextResponse('OK', { 
-        status: 200, 
-        headers: { 'Content-Type': 'text/plain' } 
+// Realtime=1 is the magic switch that makes the POST happen immediately.
+    const admsConfig = [
+        "GET=1",
+        "ErrorDelay=30",
+        "Delay=10",
+        "TransTimes=00:00;14:00",
+        "TransInterval=1",
+        "TransFlag=1111000000",
+        "Realtime=1",
+        "Encrypt=0"
+    ].join('\n');
+
+    return new NextResponse(admsConfig, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/plain'
+        }
     });
-}
+
 
 // ZKTeco hardware data push
 export async function POST(req: Request) {
