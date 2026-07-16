@@ -2,46 +2,51 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Attendance from '@/models/Attendance'; // Adjust to your model name
 
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import Attendance from '@/models/Attendance'; 
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     
     // 1. HARDWARE HANDSHAKE DETECTION
-    // The ZKTeco device ALWAYS sends an 'SN' (Serial Number) query parameter.
-    // Web dashboard requests will NOT have an 'SN' parameter.
     if (searchParams.has('SN')) {
-        const admsConfig = [
-            "GET=1",
-            "ErrorDelay=30",
-            "Delay=10",
-            "TransTimes=00:00;14:00",
+        // Ultimate compatibility string: plain text OK followed by standard line parameters
+        const lines = [
+            "OK",
+            "Registry=1",
+            "ServerVer=3.4.1",
+            "PushVersion=2.0.1",
+            "ErrorDelay=5",
+            "Delay=5",
+            "TransTimes=00:00;23:59",
             "TransInterval=1",
             "TransFlag=1111000000",
             "Realtime=1",
             "Encrypt=0"
-        ].join('\r\n') + '\r\n\r\n';
+        ];
+        
+        const admsConfig = lines.join('\r\n') + '\r\n';
 
         return new NextResponse(admsConfig, {
             status: 200,
             headers: {
                 'Content-Type': 'text/plain',
-                'Content-Length': admsConfig.length.toString(),
+                'Content-Length': Buffer.byteLength(admsConfig).toString(),
                 'Connection': 'close'
             }
         });
     }
 
     // 2. DASHBOARD CONSUMPTION DETECTION
-    // If there is no 'SN' parameter, this is your web dashboard looking for JSON data.
     try {
         await connectDB();
         const logs = await Attendance.find({}).sort({ timestamp: -1 }); 
-        
         return NextResponse.json(logs, { status: 200 });
     } catch (error: any) {
         return NextResponse.json({ error: 'Failed to fetch attendance data' }, { status: 500 });
     }
 }
-
 export async function POST(request: Request) {
     try {
         await connectDB();
