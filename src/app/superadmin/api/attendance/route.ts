@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Attendance from '@/models/Attendance'; // Adjust to your model name
 
-import { NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Attendance from '@/models/Attendance'; 
+
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -47,6 +45,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Failed to fetch attendance data' }, { status: 500 });
     }
 }
+
+
+
 export async function POST(request: Request) {
     try {
         await connectDB();
