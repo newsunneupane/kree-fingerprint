@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         }
 
         const newUser = await User.create({ name, email, deviceUserId });
-        return NextResponse.json(newUser, { status: 201 });
+return NextResponse.json({ success: true, data: newUser }, { status: 201 });
     } catch (error: any) {
         if (error.code === 11000) {
             return NextResponse.json({ error: 'Email or Device ID already exists' }, { status: 400 });
