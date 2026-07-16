@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-    // The ZKTeco machine constantly polls this endpoint.
-    // It expects nothing but raw text saying "OK".
-    return new NextResponse('OK', {
+    // The \n is strictly required by the ZKTeco firmware to close the connection
+    return new NextResponse('OK\n', {
         status: 200,
         headers: {
             'Content-Type': 'text/plain'
