@@ -4,10 +4,8 @@ import Attendance from '@/models/Attendance';
 
 
 // ZKTeco hardware handshake
-// Realtime=1 is the magic switch that makes the POST happen immediately.
-  export async function GET(request: Request) {
-    // These parameters force the ZKTeco machine into Real-Time Push mode.
-    // Realtime=1 is the magic switch that makes the POST happen immediately.
+export async function GET(request: Request) {
+    // Join the configuration string using \r\n and ensure it ends with an extra blank line (\r\n\r\n)
     const admsConfig = [
         "GET=1",
         "ErrorDelay=30",
@@ -17,12 +15,14 @@ import Attendance from '@/models/Attendance';
         "TransFlag=1111000000",
         "Realtime=1",
         "Encrypt=0"
-    ].join('\n');
+    ].join('\r\n') + '\r\n\r\n';
 
     return new NextResponse(admsConfig, {
         status: 200,
         headers: {
-            'Content-Type': 'text/plain'
+            'Content-Type': 'text/plain',
+            'Content-Length': admsConfig.length.toString(),
+            'Connection': 'close'
         }
     });
 }
