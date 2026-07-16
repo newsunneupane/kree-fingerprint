@@ -1,63 +1,134 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 
-interface EmployeeStatus {
+interface RosterRow {
     id: string;
     name: string;
     deviceUserId: string;
-    lastScanTime: string | null;
     currentStatus: 'Check-In' | 'Check-Out' | 'Absent';
+    firstInTime: string | null;
+    lastScanTime: string | null;
+    checkInsToday: number;
+    checkOutsToday: number;
 }
 
-export default function RosterMonitor() {
-    const [data, setData] = useState<EmployeeStatus[]>([]);
-    
-    useEffect(() => {
-        async function loadFeed() {
-            const res = await fetch('/superadmin/api/attendance');
-            if (res.ok) setData(await res.json());
+export default function SuperadminDashboard() {
+    const [roster, setRoster] = useState<RosterRow[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch fresh data from the API
+    async function loadAttendanceData() {
+        try {
+            // Added a timestamp query param to completely force-bypass browser-level fetch caching
+            const response = await fetch(`/superadmin/api/attendance?t=${Date.now()}`, {
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error('Failed to communicate with live stream feed');
+            const data = await response.json();
+            setRoster(data);
+            setError(null);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
-        loadFeed();
-        const hook = setInterval(loadFeed, 10000);
-        return () => clearInterval(hook);
+    }
+
+    // Polling effect: Pull fresh entries every 5 seconds automatically
+    useEffect(() => {
+        loadAttendanceData(); // Initial load
+        
+        const interval = setInterval(() => {
+            loadAttendanceData();
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, []);
 
+    // Helper to format clean timestamps
+    const formatTime = (isoString: string | null) => {
+        if (!isoString) return '--:--';
+        return new Date(isoString).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    };
+
     return (
-        <div style={{ padding: '40px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ padding: '40px' }}>
+            
+            {/* Header Status Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Live Attendance Feed</h1>
-                    <p style={{ color: '#666', margin: '4px 0 0 0', fontSize: '14px' }}>Real-time updates synced with hardware logs.</p>
+                    <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>Live Operations Matrix</h1>
+                    <p style={{ color: '#6B7280', margin: '4px 0 0 0', fontSize: '14px' }}>
+                        Real-time synchronization loop with office biometrics.
+                    </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#059669', fontWeight: '600', backgroundColor: '#D1FAE5', padding: '6px 12px', borderRadius: '99px' }}>
+                    <span style={{ width: '8px', height: '8px', backgroundColor: '#10B981', borderRadius: '50%', display: 'inline-block' }}></span>
+                    Live Polling Active (5s)
                 </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead>
-                    <tr style={{ borderBottom: '2px solid #eee', color: '#666' }}>
-                        <th style={{ padding: '12px' }}>Employee</th>
-                        <th style={{ padding: '12px' }}>Hardware ID</th>
-                        <th style={{ padding: '12px' }}>Current State</th>
-                        <th style={{ padding: '12px' }}>Last Transaction</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.map(emp => (
-                        <tr key={emp.id} style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px', fontWeight: 'bold' }}>{emp.name}</td>
-                            <td style={{ padding: '12px', fontFamily: 'monospace' }}>{emp.deviceUserId}</td>
-                            <td style={{ padding: '12px' }}>
-                                <span style={{
-                                    padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold',
-                                    backgroundColor: emp.currentStatus === 'Check-In' ? '#e6f4ea' : emp.currentStatus === 'Check-Out' ? '#fce8e6' : '#f1f3f4',
-                                    color: emp.currentStatus === 'Check-In' ? '#137333' : emp.currentStatus === 'Check-Out' ? '#c5221f' : '#3c4043'
-                                }}>{emp.currentStatus}</span>
-                            </td>
-                            <td style={{ padding: '12px', color: '#666' }}>
-                                {emp.lastScanTime ? new Date(emp.lastScanTime).toLocaleTimeString() : '--:--'}
-                            </td>
+
+            {error && (
+                <div style={{ padding: '16px', backgroundColor: '#FEE2E2', color: '#991B1B', borderRadius: '6px', marginBottom: '24px', fontSize: '14px' }}>
+                    ⚠️ {error}
+                </div>
+            )}
+
+            {/* Matrix Table */}
+            <div style={{ backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                    <thead style={{ backgroundColor: '#F9FAFB' }}>
+                        <tr style={{ borderBottom: '1px solid #E5E7EB', color: '#6B7280', fontSize: '12px', textTransform: 'uppercase' }}>
+                            <th style={{ padding: '16px' }}>Employee</th>
+                            <th style={{ padding: '16px', textAlign: 'center' }}>ID</th>
+                            <th style={{ padding: '16px' }}>Current State</th>
+                            <th style={{ padding: '16px' }}>First In</th>
+                            <th style={{ padding: '16px' }}>Last Scan</th>
+                            <th style={{ padding: '16px', textAlign: 'center' }}>Total Ins</th>
+                            <th style={{ padding: '16px', textAlign: 'center' }}>Total Outs</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {loading && roster.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF' }}>Loading live feeds...</td>
+                            </tr>
+                        ) : roster.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF' }}>No active employees found in the directory.</td>
+                            </tr>
+                        ) : (
+                            roster.map((row) => (
+                                <tr key={row.id} style={{ borderBottom: '1px solid #E5E7EB', transition: 'background-color 0.2s' }}>
+                                    <td style={{ padding: '16px', fontWeight: '600', color: '#111827' }}>{row.name}</td>
+                                    <td style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#4B5563' }}>{row.deviceUserId}</td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span style={{
+                                            padding: '4px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: '600',
+                                            backgroundColor: row.currentStatus === 'Check-In' ? '#D1FAE5' : row.currentStatus === 'Check-Out' ? '#FEF3C7' : '#F3F4F6',
+                                            color: row.currentStatus === 'Check-In' ? '#065F46' : row.currentStatus === 'Check-Out' ? '#92400E' : '#374151'
+                                        }}>
+                                            {row.currentStatus}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '16px', color: '#111827', fontFamily: 'monospace' }}>{formatTime(row.firstInTime)}</td>
+                                    <td style={{ padding: '16px', color: '#111827', fontFamily: 'monospace' }}>{formatTime(row.lastScanTime)}</td>
+                                    <td style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#059669' }}>{row.checkInsToday}</td>
+                                    <td style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#D97706' }}>{row.checkOutsToday}</td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     );
 }
