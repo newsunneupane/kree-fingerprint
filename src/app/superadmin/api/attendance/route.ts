@@ -1,51 +1,54 @@
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import User from '@/models/Users';
-import Attendance from '@/models/Attendance';
+import Attendance from '@/models/Attendance'; // Adjust based on your model name
 
-export async function GET() {
+// 1. GET Handshake for the ZKTeco Machine
+export async function GET(request: Request) {
+    // Force the machine into Real-Time Push mode using Windows CRLF line endings
+    const admsConfig = [
+        "GET=1",
+        "ErrorDelay=30",
+        "Delay=10",
+        "TransTimes=00:00;14:00",
+        "TransInterval=1",
+        "TransFlag=1111000000",
+        "Realtime=1",
+        "Encrypt=0"
+    ].join('\r\n') + '\r\n\r\n';
+
+    return new NextResponse(admsConfig, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/plain',
+            'Content-Length': admsConfig.length.toString(),
+            'Connection': 'close'
+        }
+    });
+}
+
+// 2. POST Handler to capture the incoming fingerprint scan data
+export async function POST(request: Request) {
     try {
         await connectDB();
-        const users = await User.find({ status: 'Active' });
         
-        // Broaden the search window to 48 hours to guarantee timezone-shifted logs are caught
-        const past48Hours = new Date();
-        past48Hours.setHours(past48Hours.getHours() - 48);
+        // Read the raw text payload from the ZKTeco machine
+        const rawData = await request.text();
+        
+        // Log it to Vercel so you can inspect the incoming text format
+        console.log("Raw ZKTeco Punch Received:", rawData);
 
-        const roster = await Promise.all(users.map(async (user) => {
-            // Convert to string safely to ensure exact match regardless of DB type schema
-            const searchId = String(user.deviceUserId);
+        // TODO: Parse rawData string here (e.g., extract deviceUserId, timestamp)
+        // const newPunch = await Attendance.create({ ... parsedData });
 
-            // Fetch logs matching either string or number variant
-            const userLogs = await Attendance.find({
-                deviceUserId: { $in: [searchId, Number(searchId)] },
-                timestamp: { $gte: past48Hours }
-            }).sort({ timestamp: 1 });
-
-            const totalScans = userLogs.length;
-            const firstScan = totalScans > 0 ? userLogs[0] : null;
-            const latestScan = totalScans > 0 ? userLogs[totalScans - 1] : null;
-
-            const checkIns = userLogs.filter(log => log.type === 'Check-In').length;
-            const checkOuts = userLogs.filter(log => log.type === 'Check-Out').length;
-
-            return {
-                id: user._id,
-                name: user.name,
-                deviceUserId: searchId,
-                currentStatus: latestScan ? latestScan.type : 'Absent',
-                firstInTime: firstScan ? firstScan.timestamp : null,
-                lastScanTime: latestScan ? latestScan.timestamp : null,
-                checkInsToday: checkIns,
-                checkOutsToday: checkOuts
-            };
-        }));
-
-        return NextResponse.json(roster);
+        return new NextResponse('OK\r\n', {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/plain',
+                'Connection': 'close'
+            }
+        });
     } catch (error: any) {
-        console.error("Dashboard Aggregator Error:", error);
-        return NextResponse.json({ error: 'Failed to compile status feed' }, { status: 500 });
+        console.error("Attendance log error:", error);
+        return NextResponse.json({ error: 'Failed to process log' }, { status: 500 });
     }
 }
