@@ -6,8 +6,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     
     // 1. HARDWARE HANDSHAKE DETECTION
-    // If the URL has query parameters (like SN or options), it's the ZKTeco device!
-    if (searchParams.toString().length > 0) {
+    // The ZKTeco device ALWAYS sends an 'SN' (Serial Number) query parameter.
+    // Web dashboard requests will NOT have an 'SN' parameter.
+    if (searchParams.has('SN')) {
         const admsConfig = [
             "GET=1",
             "ErrorDelay=30",
@@ -30,10 +31,9 @@ export async function GET(request: Request) {
     }
 
     // 2. DASHBOARD CONSUMPTION DETECTION
-    // If there are no query params, it's your web dashboard requesting logs to display!
+    // If there is no 'SN' parameter, this is your web dashboard looking for JSON data.
     try {
         await connectDB();
-        // Fetch logs sorted by newest first
         const logs = await Attendance.find({}).sort({ timestamp: -1 }); 
         
         return NextResponse.json(logs, { status: 200 });
@@ -41,8 +41,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Failed to fetch attendance data' }, { status: 500 });
     }
 }
-
-// Keep your POST handler exactly the same below...
 
 // 2. POST Handler to capture the incoming fingerprint scan data
 export async function POST(request: Request) {
