@@ -42,20 +42,43 @@ export async function GET(request: Request) {
     }
 }
 
-// 2. POST Handler to capture the incoming fingerprint scan data
 export async function POST(request: Request) {
     try {
         await connectDB();
         
-        // Read the raw text payload from the ZKTeco machine
+        // 1. Get the raw string text from the physical device
         const rawData = await request.text();
-        
-        // Log it to Vercel so you can inspect the incoming text format
         console.log("Raw ZKTeco Punch Received:", rawData);
 
-        // TODO: Parse rawData string here (e.g., extract deviceUserId, timestamp)
-        // const newPunch = await Attendance.create({ ... parsedData });
+        // 2. Check if the incoming payload contains actual punch records
+        if (rawData && rawData.length > 0) {
+            // ZKTeco sends punches separated by newlines. Split them into rows.
+            const rows = rawData.trim().split('\n');
+            
+            for (const row of rows) {
+                // Split the columns (ZKTeco defaults to using Tabs '\t' or spaces)
+                const columns = row.split(/\s+/); 
+                
+                // Ensure it's a valid log line (usually has at least a User ID and a Date)
+                if (columns.length >= 2) {
+                    const deviceUserId = columns[0];     // First column: User ID
+                    const dateStr = columns[1];          // Second column: YYYY-MM-DD
+                    const timeStr = columns[2];          // Third column: HH:MM:SS
+                    
+                    const punchTimestamp = new Date(`${dateStr}T${timeStr}`);
 
+                    // 3. Save directly to your MongoDB collection
+                    await Attendance.create({
+                        deviceUserId: deviceUserId,
+                        timestamp: punchTimestamp,
+                        status: "Checked In", // Or dynamic based on columns[3]
+                        source: "Device"
+                    });
+                }
+            }
+        }
+
+        // 4. Respond with an explicit Windows CRLF 'OK' so the machine deletes its buffer
         return new NextResponse('OK\r\n', {
             status: 200,
             headers: {
@@ -64,7 +87,7 @@ export async function POST(request: Request) {
             }
         });
     } catch (error: any) {
-        console.error("Attendance log error:", error);
+        console.error("Attendance log parser error:", error);
         return NextResponse.json({ error: 'Failed to process log' }, { status: 500 });
     }
 }
