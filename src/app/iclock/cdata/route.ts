@@ -34,20 +34,23 @@ export async function POST(req: NextRequest) {
       if (!line.trim()) continue;
 
       // ATTLOG format: USERID \t TIMESTAMP \t STATUS \t VERIFY_TYPE
-      const parts = line.split("\t");
-      
-      if (parts.length >= 2) {
-        const deviceuserid = parts[0].trim();
-        const timestampStr = parts[1].trim(); 
+      // Inside your POST function's loop:
+const parts = line.split("\t");
 
-        logsToInsert.push({
-          deviceuserid,
-          // Convert "YYYY-MM-DD HH:mm:ss" to standard JS Date
-          timestamp: new Date(timestampStr.replace(" ", "T")), 
-          sn,
-          raw_data: line
-        });
-      }
+if (parts.length >= 2) {
+  const deviceuserid = parts[0].trim();
+  const timestampStr = parts[1].trim(); 
+
+  // Append +05:45 to explicitly set the timezone before parsing
+  const dateString = timestampStr.replace(" ", "T") + "+05:45";
+
+  logsToInsert.push({
+    deviceuserid,
+    timestamp: new Date(dateString), 
+    sn,
+    raw_data: line
+  });
+}
     }
 
     if (logsToInsert.length > 0) {
