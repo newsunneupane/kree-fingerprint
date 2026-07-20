@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
+export default function AdminLayout({ children }: { children: React.ReactNode }) {  return (
     <div className="min-h-screen bg-gray-50/50 pb-12">
       {/* --- Shared Top Navigation Header --- */}
       <header className="bg-white border-b border-gray-200 px-8 py-4 mb-8 shadow-sm">

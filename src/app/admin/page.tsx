@@ -7,10 +7,15 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   await dbConnect();
 
-  // Calculate Today's Boundaries (matching the raw UTC machine time)
-  const now = new Date();
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-  const endOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+  // 1. Lock the server time to Nepal (+05:45) so Vercel's Washington servers 
+  // don't show the wrong "Today" during the time difference.
+  const serverNow = new Date();
+  const nepalNow = new Date(serverNow.getTime() + (5 * 60 + 45) * 60000);
+
+  // 2. Calculate boundaries using Nepal's current calendar date, formatted as UTC 
+  // to match how the raw ZKTeco machine saves timestamps in MongoDB.
+  const startOfToday = new Date(Date.UTC(nepalNow.getUTCFullYear(), nepalNow.getUTCMonth(), nepalNow.getUTCDate(), 0, 0, 0));
+  const endOfToday = new Date(Date.UTC(nepalNow.getUTCFullYear(), nepalNow.getUTCMonth(), nepalNow.getUTCDate(), 23, 59, 59));
 
   // Fetch ONLY today's logs
   const logs = await AttendanceLog.find({ 
@@ -31,7 +36,7 @@ export default async function AdminDashboard() {
     <>
       <div>
         <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Today's Overview</h2>
-        <p className="text-sm text-gray-500 mt-1">Live punch data for {now.toISOString().split('T')[0]}</p>
+        <p className="text-sm text-gray-500 mt-1">Live punch data for {nepalNow.toISOString().split('T')[0]}</p>
       </div>
 
       {/* --- Metric Cards Row --- */}

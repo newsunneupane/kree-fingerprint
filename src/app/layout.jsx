@@ -1,9 +1,14 @@
 import "./globals.css";
 
+export const metadata = {
+  title: "Kree Biometrics",
+  description: "Biometric Attendance Dashboard",
+};
+
 export default function RootLayout({ children }) {
   return (
-    
-      {children}
-    
+    <html lang="en">
+      <body>{children}</body>
+    </html>
   );
 }
