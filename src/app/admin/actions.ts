@@ -25,7 +25,7 @@ export async function addEmployee(formData: FormData) {
     });
 
     // Clear the cache for the admin dashboard so the new mapping shows up immediately
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
   } catch (error: any) {
     if (error.code === 11000) {
       throw new Error("This Device User ID is already assigned to another employee.");
