@@ -17,6 +17,15 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  if (session?.userId) {
+    if (path.startsWith('/admin') && session.role !== 'admin') {
+      return NextResponse.redirect(new URL('/employee', request.url))
+    }
+    if (path.startsWith('/employee') && session.role !== 'employee') {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+  }
+
   if (isPublicRoute && session?.userId && !path.startsWith('/login')) {
     const role = session.role as string
     if (role === 'admin') {
