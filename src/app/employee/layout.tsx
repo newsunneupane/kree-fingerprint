@@ -7,11 +7,12 @@ import { useState } from 'react'
 
 const navItems = [
   { href: '/employee', label: 'Dashboard', icon: '📊' },
-  { href: '/employee/clock-in', label: 'Clock In', icon: '⏰' },
-  { href: '/employee/clock-out', label: 'Clock Out', icon: '🔚' },
+  { href: '/employee/status', label: 'My Status', icon: '🔄' },
   { href: '/employee/today', label: "Today's Attendance", icon: '📋' },
+  { href: '/employee/reports/daily', label: 'Daily Report', icon: '📅' },
+  { href: '/employee/reports/weekly', label: 'Weekly Report', icon: '📆' },
+  { href: '/employee/reports/monthly', label: 'Monthly Report', icon: '📊' },
   { href: '/employee/history', label: 'History', icon: '📜' },
-  { href: '/employee/monthly-hours', label: 'Monthly Hours', icon: '⏱' },
   { href: '/employee/leave', label: 'Leave Request', icon: '🏖' },
   { href: '/employee/profile', label: 'Profile', icon: '👤' },
 ]

@@ -19,11 +19,14 @@ export async function getEmployeeAttendance(deviceuserid: string) {
   const emp = await Employee.findOne({ deviceuserid }).lean()
 
   const daily: Record<string, string[]> = {}
+  const dailyTypes: Record<string, { time: string; type: string }[]> = {}
   for (const log of logs) {
     const d = new Date(log.timestamp).toISOString().split('T')[0]
     const t = new Date(log.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Kathmandu', hour: '2-digit', minute: '2-digit' })
     if (!daily[d]) daily[d] = []
+    if (!dailyTypes[d]) dailyTypes[d] = []
     daily[d].push(t)
+    dailyTypes[d].push({ time: t, type: log.type || '' })
   }
 
   const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -44,6 +47,7 @@ export async function getEmployeeAttendance(deviceuserid: string) {
     date: d,
     punches: daily[d].length,
     times: daily[d],
+    types: dailyTypes[d] || [],
   }))
 
   const totalMinutes = Object.values(daily).reduce((sum, times) => {

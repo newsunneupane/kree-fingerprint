@@ -5,7 +5,7 @@ import { getEmployeeAttendance, getAllEmployees } from '@/actions/attendance'
 
 type DailyData = Record<string, string[]>
 type WeeklyData = Record<string, { count: number; date: string }>
-type MonthlyChart = { date: string; punches: number; times: string[] }[]
+type MonthlyChart = { date: string; punches: number; times: string[]; types: { time: string; type: string }[] }[]
 
 export default function EmployeeAttendancePage() {
   const [employees, setEmployees] = useState<any[]>([])
@@ -108,7 +108,7 @@ export default function EmployeeAttendancePage() {
                   <tr className="border-b border-gray-200">
                     <th className="px-4 py-2 text-xs font-bold uppercase text-gray-500">Date</th>
                     <th className="px-4 py-2 text-xs font-bold uppercase text-gray-500">Punches</th>
-                    <th className="px-4 py-2 text-xs font-bold uppercase text-gray-500">Times</th>
+                    <th className="px-4 py-2 text-xs font-bold uppercase text-gray-500">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -122,7 +122,22 @@ export default function EmployeeAttendancePage() {
                           {day.punches}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-600">{day.times.join(', ') || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-600">
+                        <div className="flex flex-wrap gap-1">
+                          {(day.types || day.times.map((t: string) => ({ time: t, type: '' }))).map((entry: any, i: number) => (
+                            <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                              entry.type === 'in'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                : entry.type === 'out'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                                  : 'bg-gray-50 text-gray-700 border border-gray-100'
+                            }`}>
+                              {entry.time}
+                              {entry.type && <span className="font-semibold">{entry.type === 'in' ? 'IN' : 'OUT'}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {data.monthlyChart.length === 0 && (

@@ -4,8 +4,8 @@ const AttendanceLogSchema = new mongoose.Schema(
   {
     deviceuserid: { type: String, required: true },
     timestamp: { type: Date, required: true },
-    sn: { type: String, required: true }, // Device serial number
-    raw_data: { type: String }, // Good for debugging ADMS payload issues
+    sn: { type: String, required: true },
+    type: { type: String, enum: ['in', 'out'], required: true, default: 'in' },
   },
   { timestamps: true }
 );

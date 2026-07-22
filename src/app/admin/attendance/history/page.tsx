@@ -26,6 +26,7 @@ export default async function AttendanceHistoryPage() {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Employee</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Date</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Time</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Type</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Device</th>
               </tr>
             </thead>
@@ -38,11 +39,20 @@ export default async function AttendanceHistoryPage() {
                     <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">{emp?.name || `ID: ${log.deviceuserid}`}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">{dt.toLocaleDateString('en-US', { timeZone: 'Asia/Kathmandu' })}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">{dt.toLocaleString('en-US', { timeZone: 'Asia/Kathmandu', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {log.type === 'in' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">Clock In</span>
+                      ) : log.type === 'out' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Clock Out</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-700 border border-gray-100">Scan</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-xs text-gray-500">{log.sn}</td>
                   </tr>
                 )
               })}
-              {logs.length === 0 && <tr><td colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">No records found.</td></tr>}
+              {logs.length === 0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">No records found.</td></tr>}
             </tbody>
           </table>
         </div>
